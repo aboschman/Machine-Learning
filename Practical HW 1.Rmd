@@ -1,0 +1,177 @@
+---
+title: "Practical HW 1"
+author: "Amanda Boschman"
+date: "2025-04-10"
+output: html_document
+---
+
+```{r}
+#Load in the data
+data <- load("/Users/amandaboschman/Downloads/youth_data.Rdata")
+df
+```
+
+```{r}
+library(ISLR2)
+library(tree)
+library(dplyr)
+library(tidyverse)
+library(ISLR2)
+library(randomForest)
+library(gbm)
+library(MASS)
+library(leaps)
+library(glmnet)
+library(class)
+
+```
+
+```{r}
+set.seed(123) #for reproducibility
+
+train.indices <- sample(1:nrow(df), 0.7 * nrow(df))
+train <- df[train.indices, ] #70% train data
+test <- df[-train.indices, ] #30% test data
+
+train <- na.omit(train)
+test <- na.omit(test)
+```
+
+
+```{r}
+#binary classification...ALCFLAG ever used alcohol...0 Never used, 1 ever used
+#multi-class classification...ALCYDAYS...# of days used alcohol in the past year....1: 1-11 days, 2: 12-49 days, 3: 50-99 days, 4: 100-299 days, 5: 300-365 days, 6: non user/no past year use
+#regression...IRALCAGE....alcohol age of first use...991 never used...age 1-66 years old
+```
+
+```{r}
+#cleaning the data
+df <- df %>% filter(IRALCAGE != "991")
+df <- df %>% filter(PRCHORE2 != ".")
+df <- df %>% filter(PARLMTSN != ".")
+df <- df %>% filter(PARHLPHW!= ".")
+
+#train$IRMJFY #days used marijuana, classification multi-class
+#train$IRCIGFM #cig frequency in past month
+#train$INCOME #total family income multi-class classification pg. 645
+#train$IFATHER #father in hh multi-class classification pg. 631
+#train$GOVTPROG #participated in gov. program binary classification pg. 645 1: YES, 2: NO
+#train$IRSEX #sex pg. 616 1: MALE, 2: FEMALE
+#train$NEWRACE2 #race multiclass classification pg. 618
+#train$IMOTHER #mother in hh multi-class classification pg. 631
+#train$PRCHORE2 #parents make youth do chores around the house pg. 454
+#train$PARHLPHW #parents help with homework in the past year pg. 454
+#train$PARLMTSN #parents limit time out on school nights pg. 454
+```
+
+```{r}
+#ALCYDAYS
+
+#tree
+tree.ALCYDAYS <- tree(ALCYDAYS ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train)
+summary(tree.ALCYDAYS)
+
+tree.ALCYDAYS
+
+plot(tree.ALCYDAYS)
+text(tree.ALCYDAYS)
+```
+
+```{r}
+#MSE ALCYDAYS
+yhat <- predict(tree.ALCYDAYS, data = train)
+yhat.bag <- predict(bag.ALCYDAYS, newdata = test, type = 'class')
+mean((yhat.bag - test$ALCYDAYS)^2)
+
+importance(bag.ALCYDAYS)
+```
+```{r}
+#pruning tree ALCYDAYS
+set.seed(2)
+cv.ALCYDAYS <- cv.tree(tree.ALCYDAYS)
+names(cv.ALCYDAYS)
+cv.ALCYDAYS
+
+prune.ALCYDAYS <- prune.tree(tree.ALCYDAYS, best = 2)
+plot(prune.ALCYDAYS)
+text(prune.ALCYDAYS, pretty = 0)
+
+summary(prune.ALCYDAYS)
+
+tree.pred <- predict(prune.ALCYDAYS, test)
+table(tree.pred, test$ALCYDAYS)
+```
+```{r}
+#Bagging
+bag.ALCYDAYS <- randomForest(ALCYDAYS ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train, mtry = 11, importance = TRUE)
+bag.ALCYDAYS
+
+#Boosting
+boost.ALCYDAYS <- gbm(ALCYDAYS ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train, distribution = "gaussian", n.trees = 1000, interaction.depth = 4, shrinkage = 0.2, verbose = F)
+
+lambda <- c(0.001, 0.005, 0.01, 0.05, 0.1, 0.3, 0.5, 1)
+
+preds <- predict(boost.ALCYDAYS, newdata = test)
+error.rates <- mean(preds != test$ALCYDAYS)
+
+error.df <- data.frame(lambda = lambda, error = error.rates)
+
+ggplot(error.df, aes(x=lambda, y=error)) +
+  geom_line(color="blue") +
+  geom_point(color="red") +
+  labs(title="Error Rate vs. Lambda",
+       x="Lambda (Shrinkage Values)",
+       y="Test Error Rate")
+
+#PLOT SEEMS WRONG*********************************************************************************************
+```
+
+
+```{r}
+#tree ALCFLAG
+tree.ALCFLAG <- tree(ALCFLAG ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train)
+summary(tree.ALCFLAG)
+
+tree.ALCFLAG
+
+plot(tree.ALCFLAG)
+text(tree.ALCFLAG)
+```
+
+```{r}
+#Bagging
+bag.ALCFLAG <- randomForest(ALCFLAG ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train, mtry = 11, importance = TRUE)
+bag.ALCFLAG
+
+yhat <- predict(tree.ALCFLAG, data = train)
+
+yhat.bag <- predict(bag.ALCFLAG)
+mean((yhat.bag - yhat)^2)
+```
+
+
+```{r}
+#tree IRALCAGE
+tree.IRALCAGE <- tree(IRALCAGE ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train)
+summary(tree.IRALCAGE)
+
+tree.IRALCAGE
+
+plot(tree.IRALCAGE)
+text(tree.IRALCAGE)
+```
+
+```{r}
+#Bagging
+bag.IRALCAGE <- randomForest(IRALCAGE ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train, mtry = 11, importance = TRUE)
+bag.IRALCAGE
+
+#Random Forests
+set.seed(1)
+rf.IRALCAGE <- randomForest(IRALCAGE ~ IRMJFY + IRCIGFM + INCOME + IFATHER + GOVTPROG + IRSEX + NEWRACE2 + IMOTHER + PRCHORE2 + PARHLPHW + PARLMTSN, data = train, mtry = 5, importance = TRUE)
+
+yhat <- predict(tree.IRALCAGE, data = train)
+yhat.rf <- predict(rf.IRALCAGE)
+mean((yhat.rf - yhat)^2)
+importance(rf.IRALCAGE)
+```
