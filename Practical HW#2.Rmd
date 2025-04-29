@@ -1,0 +1,199 @@
+---
+title: "Practical HW#2"
+author: "Amanda Boschman"
+date: "2025-04-27"
+output: html_document
+---
+```{r}
+library(ISLR2)
+library(e1071)
+library(dplyr)
+```
+
+```{r}
+#Load in Data
+data <- read.csv("/Users/amandaboschman/Downloads/nhis_2022.csv")
+
+data <- data %>% select(-YEAR, -SERIAL, -STRATA, -PSU, -NHISHID, -REGION, -PERNUM, -NHISPID, -HHX, -SAMPWEIGHT, -ASTATFLG,-HEIGHT, -WEIGHT, -CSTATFLG, -BMICALC) #remove columns that are not being used (survey methodology, demographics regarding weight, height, and BMI)
+
+
+data %>% filter(SEX != 1) #1 = males, 2 = females, keep only females
+data <- data %>% filter(SEX != "7") #remove unknown
+data <- data %>% filter(SEX != "8") #remove unknown
+data <- data %>% filter(SEX != "9") #remove unknown
+
+data <- data %>% filter(AGE != "997")
+data <- data %>% filter(AGE != "998")
+data <- data %>% filter(AGE != "999")
+
+data <- data %>% filter(MARSTCUR != "9")
+
+data <- data %>% filter(EDUC != "997")
+data <- data %>% filter(EDUC != "998")
+data <- data %>% filter(EDUC != "999")
+
+data <- data %>% filter(HOURSWRK != "97")
+data <- data %>% filter(HOURSWRK != "98")
+data <- data %>% filter(HOURSWRK != "99")
+
+data <- data %>% filter(POVERTY != "98")
+data <- data %>% filter(POVERTY != "99")
+
+data <- data %>% filter(HINOTCOVE != "7")
+data <- data %>% filter(HINOTCOVE != "8")
+data <- data %>% filter(HINOTCOVE != "9")
+
+data <- data %>% filter(CANCEREV != "7")
+data <- data %>% filter(CANCEREV != "8")
+data <- data %>% filter(CANCEREV != "9")
+
+data <- data %>% filter(CHEARTDIEV != "7")
+data <- data %>% filter(CHEARTDIEV != "8")
+data <- data %>% filter(CHEARTDIEV != "9")
+
+data <- data %>% filter(DIABETICEV != "7")
+data <- data %>% filter(DIABETICEV != "8")
+data <- data %>% filter(DIABETICEV != "9")
+
+data <- data <- data %>% filter(HEARTATTEV != "7")
+data <- data <- data %>% filter(HEARTATTEV != "8")
+data <- data <- data %>% filter(HEARTATTEV != "9")
+
+data <- data <- data %>% filter(STROKEV != "7")
+data <- data <- data %>% filter(STROKEV != "8")
+data <- data <- data %>% filter(STROKEV != "9")
+
+data <- data <- data %>% filter(ALCANYNO != "996")
+data <- data <- data %>% filter(ALCANYNO != "997")
+data <- data <- data %>% filter(ALCANYNO != "998")
+data <- data <- data %>% filter(ALCANYNO != "999")
+
+data <- data <- data %>% filter(ALCDAYSYR != "995")
+data <- data <- data %>% filter(ALCDAYSYR != "996")
+data <- data <- data %>% filter(ALCDAYSYR != "997")
+data <- data <- data %>% filter(ALCDAYSYR != "998")
+data <- data <- data %>% filter(ALCDAYSYR != "999")
+
+data <- data <- data %>% filter(CIGDAYMO != "96")
+data <- data <- data %>% filter(CIGDAYMO != "97")
+data <- data <- data %>% filter(CIGDAYMO != "98")
+data <- data <- data %>% filter(CIGDAYMO != "99")
+
+data <- data <- data %>% filter(MOD10DMIN != "000")
+data <- data <- data %>% filter(MOD10DMIN != "996")
+data <- data <- data %>% filter(MOD10DMIN != "997")
+data <- data <- data %>% filter(MOD10DMIN != "998")
+data <- data <- data %>% filter(MOD10DMIN != "999")
+
+data <- data <- data %>% filter(VIG10DMIN != "000")
+data <- data <- data %>% filter(VIG10DMIN != "996")
+data <- data <- data %>% filter(VIG10DMIN != "997")
+data <- data <- data %>% filter(VIG10DMIN != "998")
+data <- data <- data %>% filter(VIG10DMIN != "999")
+
+data <- data <- data %>% filter(FRUTNO != "995")
+data <- data <- data %>% filter(FRUTNO != "996")
+data <- data <- data %>% filter(FRUTNO != "997")
+data <- data <- data %>% filter(FRUTNO != "998")
+data <- data <- data %>% filter(FRUTNO != "999")
+
+data <- data <- data %>% filter(VEGENO != "996")
+data <- data <- data %>% filter(VEGENO != "997")
+data <- data <- data %>% filter(VEGENO != "998")
+data <- data <- data %>% filter(VEGENO != "999")
+
+data <- data <- data %>% filter(JUICEMNO != "996")
+data <- data <- data %>% filter(JUICEMNO != "997")
+data <- data <- data %>% filter(JUICEMNO != "998")
+data <- data <- data %>% filter(JUICEMNO != "999")
+
+data <- data <- data %>% filter(SALADSNO != "996")
+data <- data <- data %>% filter(SALADSNO != "997")
+data <- data <- data %>% filter(SALADSNO != "998")
+data <- data <- data %>% filter(SALADSNO != "999")
+
+data <- data <- data %>% filter(BEANNO != "996")
+data <- data <- data %>% filter(BEANNO != "997")
+data <- data <- data %>% filter(BEANNO != "998")
+data <- data <- data %>% filter(BEANNO != "999")
+
+data <- data <- data %>% filter(SALSAMNO != "996")
+data <- data <- data %>% filter(SALSAMNO != "997")
+data <- data <- data %>% filter(SALSAMNO != "998")
+data <- data <- data %>% filter(SALSAMNO != "999")
+
+data <- data <- data %>% filter(TOMSAUCEMNO != "996")
+data <- data <- data %>% filter(TOMSAUCEMNO != "997")
+data <- data <- data %>% filter(TOMSAUCEMNO != "998")
+data <- data <- data %>% filter(TOMSAUCEMNO != "999")
+
+data <- data <- data %>% filter(SODAPNO != "996")
+data <- data <- data %>% filter(SODAPNO != "997")
+data <- data <- data %>% filter(SODAPNO != "998")
+data <- data <- data %>% filter(SODAPNO != "999")
+
+data <- data <- data %>% filter(FRIESPNO != "996")
+data <- data <- data %>% filter(FRIESPNO != "997")
+data <- data <- data %>% filter(FRIESPNO != "998")
+data <- data <- data %>% filter(FRIESPNO != "999")
+
+data <- data <- data %>% filter(SPORDRMNO != "996")
+data <- data <- data %>% filter(SPORDRMNO != "997")
+data <- data <- data %>% filter(SPORDRMNO != "998")
+data <- data <- data %>% filter(SPORDRMNO != "999")
+
+data <- data <- data %>% filter(FRTDRINKMNO != "996")
+data <- data <- data %>% filter(FRTDRINKMNO != "997")
+data <- data <- data %>% filter(FRTDRINKMNO != "998")
+data <- data <- data %>% filter(FRTDRINKMNO != "999")
+
+data <- data <- data %>% filter(COFETEAMNO != "996")
+data <- data <- data %>% filter(COFETEAMNO != "997")
+data <- data <- data %>% filter(COFETEAMNO != "998")
+data <- data <- data %>% filter(COFETEAMNO != "999")
+
+data <- data <- data %>% filter(POTATONO != "996")
+data <- data <- data %>% filter(POTATONO != "997")
+data <- data <- data %>% filter(POTATONO != "998")
+data <- data <- data %>% filter(POTATONO != "999")
+
+data <- data <- data %>% filter(PIZZANO != "996")
+data <- data <- data %>% filter(PIZZANO != "997")
+data <- data <- data %>% filter(PIZZANO != "998")
+data <- data <- data %>% filter(PIZZANO != "999")
+
+data <- data <- data %>% filter(HRSLEEP != "00")
+data <- data <- data %>% filter(HRSLEEP != "25")
+data <- data <- data %>% filter(HRSLEEP != "97")
+data <- data <- data %>% filter(HRSLEEP != "98")
+data <- data <- data %>% filter(HRSLEEP != "99")
+
+data <- data <- data %>% filter(CVDSHT != "0")
+data <- data <- data %>% filter(CVDSHT != "7")
+data <- data <- data %>% filter(CVDSHT != "8")
+data <- data <- data %>% filter(CVDSHT != "9")
+
+#turning into factors
+data$SEX <-as.factor(data$SEX)
+data$MARSTCUR <-as.factor(data$MARSTCUR)
+data$EDUC <- as.factor(data$EDUC)
+data$POVERTY <- as.factor(data$POVERTY)
+data$HINOTCOVE <- as.factor(data$HINOTCOVE)
+data$CANCEREV <- as.factor(data$CANCEREV)
+data$CHEARTDIEV <- as.factor(data$CHEARTDIEV)
+data$DIABETICEV <- as.factor(data$DIABETICEV)
+data$HEARTATTEV <- as.factor(data$HEARTATTEV)
+data$STROKEV <- as.factor(data$STROKEV)
+data$CVDSHT <- as.factor(data$CVDSHT)
+
+head(data)
+
+```
+
+```{r}
+svm1 <- svm(species ~ bill_depth_mm + body_mass_g , data = peng, kernel = "linear", cost = 30, scale = FALSE)
+plot(svm1, peng, body_mass_g ~ bill_depth_mm)
+```
+
+```{r}
+```
